@@ -1,0 +1,113 @@
+from typing import Union
+
+from fastapi import HTTPException
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
+from bson import ObjectId
+from models import UserInDB
+from utils import get_password_hash, verify_password
+
+from schemas import kg_facility_helper, school_facility_helper, sp_facility_helper
+
+uri = "mongodb+srv://rohitv0604:admin12345@cluster01.8hg0car.mongodb.net/"
+
+client = AsyncIOMotorClient(uri)
+database = client.ChemnitzFacilities
+
+# Send a ping to confirm a successful connection
+try:
+    client.admin.command('ping')
+    print("You have successfully connected to MongoDB!")
+except Exception as e:
+    print(f"Error: ${e}")
+
+kindergarten = database.get_collection("kindergarten")
+school = database.get_collection("school")
+social_child_project = database.get_collection("social_child_projects")
+social_teenage_project = database.get_collection("social_teenage_project")
+user_collection = database.get_collection("users")
+
+async def retrieve_kg_facilities():
+    facilities = []
+    async for facility in kindergarten.find():
+        facilities.append(kg_facility_helper(facility))
+    return facilities
+
+
+async def retrieve_kg_facility(id: str) -> dict:
+    facility = await kindergarten.find_one({"_id": ObjectId(id)})
+    if facility:
+        return kg_facility_helper(facility)
+
+
+async def retrieve_school_facilities():
+    school_facilities = []
+    async for facility in school.find():
+        school_facilities.append(school_facility_helper(facility))
+    return school_facilities
+
+
+async def retrieve_school_facility(id: str) -> dict:
+    facility = await school.find_one({"_id": ObjectId(id)})
+    if facility:
+        return school_facility_helper(facility)
+
+
+async def retrieve_scp_facilities():
+    scp_facilities = []
+    async for facility in social_child_project.find():
+        scp_facilities.append(sp_facility_helper(facility))
+    return scp_facilities
+
+
+async def retrieve_scp_facility(id: str) -> dict:
+    facility = await social_child_project.find_one({"_id": ObjectId(id)})
+    if facility:
+        return sp_facility_helper(facility)
+
+
+async def retrieve_stp_facilities():
+    stp_facilities = []
+    async for facility in social_teenage_project.find():
+        stp_facilities.append(sp_facility_helper(facility))
+    return stp_facilities
+
+
+async def retrieve_stp_facility(id: str) -> dict:
+    facility = await social_teenage_project.find_one({"_id": ObjectId(id)})
+    if facility:
+        return sp_facility_helper(facility)
+
+
+async def retrieve_all():
+    try:
+        kindergartens = await retrieve_kg_facilities()
+        schools = await retrieve_school_facilities()
+        social_child_projects = await retrieve_scp_facilities()
+        social_teenage_projects = await retrieve_stp_facilities()
+
+        return {
+            "kindergartens": kindergartens,
+            "schools": schools,
+            "social_child_projects": social_child_projects,
+            "social_teenage_project": social_teenage_projects
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def add_user(user_data: dict) -> dict:
+    user = await user_collection.insert_one(user_data)
+    new_user = await user_collection.find_one({"_id": user.inserted_id})
+    return new_user
+
+
+async def get_user(username: str, user_collection=None) -> dict:
+    return await user_collection.find_one({"username": username})
+
+
+async def authenticate_user(username: str, password: str) -> Union[dict, bool]:
+    user = await get_user(username)
+    if user and verify_password(password, user["hashed_password"]):
+        return user
+    return False
