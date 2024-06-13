@@ -163,3 +163,21 @@ class UserSignup(BaseModel):
 
 class UserInDB(UserModel):
     hashed_password: str
+
+
+class FavoriteFacility(BaseModel):
+    facility_id: str
+
+
+class Facility(BaseModel):
+    id: str
+    X: float
+    Y: float
+    OBJECTID: int
+    ID: int
+    TRAEGER: str
+    BEZEICHNUNG: str
+    STRASSE: str
+    PLZ: int
+    ORT: str
+    TELEFON: str

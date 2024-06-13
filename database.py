@@ -2,7 +2,7 @@ from typing import Union
 
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 from bson import ObjectId
 from models import UserInDB
 from utils import get_password_hash, verify_password
@@ -13,6 +13,10 @@ uri = "mongodb+srv://rohitv0604:admin12345@cluster01.8hg0car.mongodb.net/"
 
 client = AsyncIOMotorClient(uri)
 database = client.ChemnitzFacilities
+users_collection = database.users
+
+users_collection.create_index([("username", ASCENDING)], unique=True)
+users_collection.create_index([("email", ASCENDING)], unique=True)
 
 # Send a ping to confirm a successful connection
 try:
@@ -98,6 +102,7 @@ async def retrieve_all():
 
 
 async def add_user(user_data: dict) -> dict:
+    user_data["favorite_facility"] = None
     user = await user_collection.insert_one(user_data)
     new_user = await user_collection.find_one({"_id": user.inserted_id})
     return new_user
@@ -115,3 +120,23 @@ async def authenticate_user(username: str, password: str) -> dict:
     if not verify_password(password, user["hashed_password"]):
         return None
     return user
+
+
+async def set_favorite_facility(username: str, facility_id: str) -> dict:
+    result = await user_collection.update_one(
+        {"username": username},
+        {"$set": {"favorite_facility": ObjectId(facility_id)}}
+    )
+    if result.modified_count == 1:
+        return await get_user(username)
+    return None
+
+
+async def get_favorite_facility(username: str) -> dict:
+    user = await get_user(username)
+    if user and "favorite_facility" in user:
+        facility = await database.facilities.find_one({"_id": user["favorite_facility"]})
+        if facility:
+            facility["id"] = str(facility["_id"])
+            return facility
+    return None

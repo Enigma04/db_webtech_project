@@ -1,5 +1,6 @@
 # main.py
 from datetime import timedelta
+from typing import Optional
 
 from fastapi import FastAPI, Body, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
@@ -10,7 +11,7 @@ from starlette import status
 
 from utils import get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-from models import UserSignup, UserModel
+from models import UserSignup, UserModel, Facility, FavoriteFacility
 from database import (
     retrieve_kg_facility,
     retrieve_kg_facilities,
@@ -20,7 +21,7 @@ from database import (
     retrieve_scp_facilities,
     retrieve_stp_facility,
     retrieve_stp_facilities,
-    retrieve_all, get_user, add_user, authenticate_user,
+    retrieve_all, get_user, add_user, authenticate_user, set_favorite_facility, get_favorite_facility, users_collection,
 )
 
 app = FastAPI()
@@ -91,16 +92,6 @@ async def get_all_data():
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-# Models
-class UserSignup(BaseModel):
-    username: str
-    password: str
-
-
-class UserModel(BaseModel):
-    username: str
-
-
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     username = decode_access_token(token)
     if username is None:
@@ -121,7 +112,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @app.post("/signup/", response_description="Register a new user")
 async def signup(user: UserSignup = Body(...)):
-    user_data = jsonable_encoder(user)
+    user_data = user.dict()
+    existing_user = await users_collection.find_one(
+        {"$or": [{"username": user_data["username"]}, {"email": user_data["email"]}]})
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username or email already exists."
+        )
     user_data["hashed_password"] = get_password_hash(user_data["password"])
     del user_data["password"]
     new_user = await add_user(user_data)
@@ -147,3 +145,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/users/me", response_model=UserModel)
 async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
+
+
+@app.post("/users/me/favorite", response_model=Facility)
+async def set_user_favorite_facility(favorite: FavoriteFacility, current_user: UserModel = Depends(get_current_user)):
+    updated_user = await set_favorite_facility(current_user.username, favorite.facility_id)
+    if updated_user is None:
+        raise HTTPException(status_code=400, detail="Facility not found")
+    favorite_facility = await get_favorite_facility(current_user.username)
+    return favorite_facility
+
+
+@app.get("/users/me/favorite", response_model=Optional[Facility])
+async def get_user_favorite_facility(current_user: UserModel = Depends(get_current_user)):
+    favorite_facility = await get_favorite_facility(current_user.username)
+    if favorite_facility is None:
+        raise HTTPException(status_code=404, detail="Favorite facility not found")
+    return favorite_facility
