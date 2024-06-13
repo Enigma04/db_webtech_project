@@ -1,11 +1,15 @@
+import os
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from models import UserInDB
 from passlib.context import CryptContext
-
+from dotenv import load_dotenv
+load_dotenv()
 # Secret key to encode JWT token
-SECRET_KEY = "your-secret-key"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("No SECRET_KEY set for JWT. Please set it in the environment variables.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

@@ -27,6 +27,7 @@ social_child_project = database.get_collection("social_child_projects")
 social_teenage_project = database.get_collection("social_teenage_project")
 user_collection = database.get_collection("users")
 
+
 async def retrieve_kg_facilities():
     facilities = []
     async for facility in kindergarten.find():
@@ -102,12 +103,15 @@ async def add_user(user_data: dict) -> dict:
     return new_user
 
 
-async def get_user(username: str, user_collection=None) -> dict:
-    return await user_collection.find_one({"username": username})
+async def get_user(username: str) -> dict:
+    user = await user_collection.find_one({"username": username})
+    return user
 
 
-async def authenticate_user(username: str, password: str) -> Union[dict, bool]:
+async def authenticate_user(username: str, password: str) -> dict:
     user = await get_user(username)
-    if user and verify_password(password, user["hashed_password"]):
-        return user
-    return False
+    if not user:
+        return None
+    if not verify_password(password, user["hashed_password"]):
+        return None
+    return user

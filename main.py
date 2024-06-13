@@ -5,6 +5,7 @@ from fastapi import FastAPI, Body, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from starlette import status
 
 from utils import get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -88,6 +89,16 @@ async def get_all_data():
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+# Models
+class UserSignup(BaseModel):
+    username: str
+    password: str
+
+
+class UserModel(BaseModel):
+    username: str
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
