@@ -104,7 +104,7 @@ async def retrieve_all():
 async def add_user(user_data: dict) -> dict:
     user_data["favorite_facility"] = None
     user = await user_collection.insert_one(user_data)
-    new_user = await user_collection.find_one({"_id": user.inserted_id})
+    new_user = await user_collection.find_one({"id": user.inserted_id})
     return new_user
 
 
