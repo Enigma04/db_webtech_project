@@ -140,7 +140,15 @@ async def signup(user: UserSignup = Body(...)):
     user_data["hashed_password"] = get_password_hash(user_data["password"])
     del user_data["password"]
     new_user = await add_user(user_data)
-    return new_user
+    #return new_user
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user_data["username"]},
+        expires_delta=access_token_expires
+    )
+
+    return {"message": "User registered and logged in successfully", "access_token": access_token,
+            "token_type": "bearer"}
 
 
 @app.post("/token", response_model=dict)
