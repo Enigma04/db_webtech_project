@@ -5,6 +5,7 @@ from typing import Optional
 from models import UserInDB
 from passlib.context import CryptContext
 from dotenv import load_dotenv
+
 load_dotenv()
 # Secret key to encode JWT token
 SECRET_KEY = os.getenv("SECRET_KEY")
