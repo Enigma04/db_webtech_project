@@ -10,10 +10,9 @@ from pydantic import BaseModel
 from starlette import status
 from fastapi.middleware.cors import CORSMiddleware
 
-
 from utils import get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-from models import UserSignup, UserModel, Facility, FavoriteFacility
+from models import UserSignup, UserModel, Facility, FavoriteFacility, UserUpdate
 from database import (
     retrieve_kg_facility,
     retrieve_kg_facilities,
@@ -43,6 +42,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/kg-facilities/{id}", response_description="List a kindergarten")
 async def get_kindergarten(id: str):
@@ -140,7 +140,7 @@ async def signup(user: UserSignup = Body(...)):
     user_data["hashed_password"] = get_password_hash(user_data["password"])
     del user_data["password"]
     new_user = await add_user(user_data)
-    #return new_user
+    # return new_user
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user_data["username"]},
@@ -170,6 +170,30 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/users/me", response_model=UserModel)
 async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
+
+
+@app.put("/users/me", response_model=UserModel)
+async def update_user_details(
+        user_update: UserUpdate,
+        current_user: UserModel = Depends(get_current_user)
+):
+    update_data = user_update.dict(exclude_unset=True)
+    if "password" in update_data:
+        update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
+    await users_collection.update_one(
+        {"username": current_user["username"]},
+        {"$set": update_data}
+    )
+    updated_user = await users_collection.find_one({"username": current_user["username"]})
+    return updated_user
+
+
+@app.delete("/users/me", response_description="Delete current user")
+async def delete_user_account(current_user: UserModel = Depends(get_current_user)):
+    delete_result = await users_collection.delete_one({"username": current_user["username"]})
+    if delete_result.deleted_count == 1:
+        return {"message": "User account deleted successfully"}
+    raise HTTPException(status_code=404, detail="User not found")
 
 
 @app.post("/users/me/favorite", response_model=Facility)

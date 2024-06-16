@@ -149,6 +149,12 @@ class UserModel(BaseModel):
     disabled: Optional[bool] = None
 
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+    favourite_facility: Optional[str] = None
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
