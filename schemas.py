@@ -31,7 +31,7 @@ def school_facility_helper(facility) -> dict:
         "ID": facility["ID"],
         "TYP": facility["TYP"],
         "ART": facility["ART"],
-        #"STANDORTTYP": facility["STANDORTTYP"],
+        "STANDORTTYP": facility.get("STANDORTTYP",""),
         "BEZEICHNUNG": facility["BEZEICHNUNG"],
         "KURZBEZEICHNUNG": facility["KURZBEZEICHNUNG"],
         "STRASSE": facility["STRASSE"],
@@ -44,11 +44,15 @@ def school_facility_helper(facility) -> dict:
         "WWW": facility.get("WWW", ""),
         "TRAEGER": facility["TRAEGER"],
         "TRAEGERTYP": facility["TRAEGERTYP"],
-        #"BEZUGNR": facility["BEZUGNR"],
+        "BEZUGNR": facility.get("BEZUGNR",""),
         "GEBIETSARTNUMMER": facility["GEBIETSARTNUMMER"],
         "SNUMMER": facility["SNUMMER"],
         "NUMMER": facility["NUMMER"],
-        "GlobalID": str(facility["GlobalID"])
+        #"GlobalID": str(facility["GlobalID"]),
+        "CreationDate": facility.get("CreationDate", ""),
+        "Creator": facility.get("Creator", ""),
+        "EditDate": facility.get("EditDate", ""),
+        "Editor": facility.get("Editor", "")
     }
 
 
@@ -60,9 +64,10 @@ def sp_facility_helper(facility) -> dict:
         "OBJECTID": facility["OBJECTID"],
         "ID": facility["ID"],
         "TRAEGER": facility["TRAEGER"],
-        "LEISTUNGEN": facility["LEISTUNGEN"],
+        "LEISTUNGEN": facility.get("LEISTUNGEN", ""),
         "STRASSE": facility["STRASSE"],
         "PLZ": facility["PLZ"],
         "ORT": facility["ORT"],
-        #"TELEFON": facility["TELEFON"]
+        "TELEFON": facility.get("TELEFON", ""),
+        "FAX": facility.get("FAX", ""),
     }

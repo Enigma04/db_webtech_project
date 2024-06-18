@@ -2,7 +2,6 @@ import os
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-from models import UserInDB
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 

@@ -1,7 +1,5 @@
-from typing import Optional
-from uuid import UUID
-
-from pydantic import BaseModel, Field, EmailStr, HttpUrl
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Union
 
 
 class KinderGartenFacilityModel(BaseModel):
@@ -10,20 +8,20 @@ class KinderGartenFacilityModel(BaseModel):
     Y: float
     OBJECTID: int
     ID: int
-    TRAEGER: str
-    BEZEICHNUNG: str
-    KURZBEZEICHNUNG: str
+    TRAEGER: Optional[str] = None
+    BEZEICHNUNG: Optional[str] = None
+    KURZBEZEICHNUNG: Optional[str] = None
     STRASSE: str
-    STRSCHL: int
-    HAUSBEZ: int
+    STRSCHL: Optional[int] = None
+    HAUSBEZ: Optional[int] = None
     PLZ: int
     ORT: str
-    HORT: int
-    KITA: int
+    HORT: Optional[int] = None
+    KITA: Optional[int] = None
     TELEFON: Optional[str] = None
     EMAIL: Optional[str] = None
-    BARRIEREFREI: int
-    INTEGRATIV: int
+    BARRIEREFREI: Optional[int] = None
+    INTEGRATIV: Optional[int] = None
 
     class Config:
         schema_extra = {
@@ -58,10 +56,10 @@ class SchoolFacilityModel(BaseModel):
     OBJECTID: int
     ID: int
     TYP: int
-    ART: str
-    # STANDORTTYP: int
-    BEZEICHNUNG: str
-    KURZBEZEICHNUNG: str
+    ART: Optional[str] = None
+    STANDORTTYP: Optional[int] = None
+    BEZEICHNUNG: Optional[str] = None
+    KURZBEZEICHNUNG: Optional[str] = None
     STRASSE: str
     PLZ: int
     ORT: str
@@ -69,14 +67,15 @@ class SchoolFacilityModel(BaseModel):
     FAX: Optional[str] = None
     EMAIL: Optional[EmailStr] = None
     PROFILE: Optional[str] = None
-    WWW: Optional[HttpUrl] = None
-    TRAEGER: str
-    TRAEGERTYP: int
-    # BEZUGNR: Optional[int] = None
-    GEBIETSARTNUMMER: int
-    SNUMMER: int
-    NUMMER: int
-    GlobalID: Optional[UUID] = None
+    WWW: Optional[str] = None
+    TRAEGER: Optional[str] = None
+    TRAEGERTYP: Optional[int] = None
+    BEZUGNR: Optional[int] = None
+    GEBIETSARTNUMMER: Optional[int] = None
+    SNUMMER: Optional[int] = None
+    NUMMER: Optional[int] = None
+
+    # GlobalID: Optional[UUID] = None
 
     class Config:
         schema_extra = {
@@ -88,7 +87,7 @@ class SchoolFacilityModel(BaseModel):
                 "ID": 30,
                 "TYP": 10,
                 "ART": "Grundschule",
-                # "STANDORTTYP": 1,
+                "STANDORTTYP": 1,
                 "BEZEICHNUNG": "Grundschule Sonnenberg",
                 "KURZBEZEICHNUNG": "GS Sonnenberg",
                 "STRASSE": "Ludwig-Kirsch-Straße 27",
@@ -101,11 +100,11 @@ class SchoolFacilityModel(BaseModel):
                 "WWW": "https://cms.sachsen.schule/gscsonnenberg/start.html",
                 "TRAEGER": "Kommunal",
                 "TRAEGERTYP": 10,
-                # "BEZUGNR": 30,
+                "BEZUGNR": 30,
                 "GEBIETSARTNUMMER": 40,
                 "SNUMMER": 139,
                 "NUMMER": 503,
-                "GlobalID": "0e6df524-c87d-4844-9c7f-11feabdc3d6b"
+                # "GlobalID": "0e6df524-c87d-4844-9c7f-11feabdc3d6b"
             }
         }
 
@@ -116,13 +115,13 @@ class SPFacilityModel(BaseModel):
     Y: float
     OBJECTID: int
     ID: int
-    TRAEGER: str
-    LEISTUNGEN: str
+    TRAEGER: Optional[str] = None
+    LEISTUNGEN: Optional[str] = None
     STRASSE: str
     PLZ: int
     ORT: str
-
-    # TELEFON: Optional[str] = None
+    TELEFON: str
+    FAX: Optional[str] = None
 
     class Config:
         schema_extra = {
@@ -137,22 +136,34 @@ class SPFacilityModel(BaseModel):
                 "STRASSE": "Lennéstraße 1",
                 "PLZ": 9117,
                 "ORT": "Chemnitz",
-                # "TELEFON": "0371 8157527\n0174 3522231"
+                "TELEFON": "0371 8157527\n0174 3522231",
+                "FAX": "0371 3692321"
             }
         }
+
+
+FacilityType = Union[SchoolFacilityModel, KinderGartenFacilityModel, SPFacilityModel]
 
 
 class UserModel(BaseModel):
     username: str
     email: EmailStr
     full_name: Optional[str] = None
-    disabled: Optional[bool] = None
+
+
+class UserFavoriteFacilityModel(BaseModel):
+    user_id: str
+    facility_id: str
 
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
     favourite_facility: Optional[str] = None
+    address: str
+    house_number: Optional[str] = None
+    plz: str
+    ort: str
 
 
 class UserLogin(BaseModel):
@@ -165,6 +176,10 @@ class UserSignup(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     password: str
+    address: str
+    house_number: Optional[str] = None
+    plz: str
+    ort: str
 
 
 class UserInDB(UserModel):
@@ -174,16 +189,3 @@ class UserInDB(UserModel):
 class FavoriteFacility(BaseModel):
     facility_id: str
 
-
-class Facility(BaseModel):
-    id: str
-    X: float
-    Y: float
-    OBJECTID: int
-    ID: int
-    TRAEGER: str
-    BEZEICHNUNG: str
-    STRASSE: str
-    PLZ: int
-    ORT: str
-    TELEFON: str

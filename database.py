@@ -1,19 +1,19 @@
-from typing import Union
+import uuid
 
 from fastapi import HTTPException
+from pymongo import ASCENDING
+from bson import ObjectId, Binary
+from models import KinderGartenFacilityModel, SchoolFacilityModel, SPFacilityModel
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import MongoClient, ASCENDING
-from bson import ObjectId
-from models import UserInDB
-from utils import get_password_hash, verify_password
+from utils import verify_password
 
 from schemas import kg_facility_helper, school_facility_helper, sp_facility_helper
 
 uri = "mongodb+srv://rohitv0604:admin12345@cluster01.8hg0car.mongodb.net/"
 
-client = AsyncIOMotorClient(uri)
-database = client.ChemnitzFacilities
-users_collection = database.users
+client = AsyncIOMotorClient(uri, uuidRepresentation='standard')
+database = client["ChemnitzFacilities"]
+users_collection = database["users"]
 
 users_collection.create_index([("username", ASCENDING)], unique=True)
 users_collection.create_index([("email", ASCENDING)], unique=True)
@@ -25,11 +25,11 @@ try:
 except Exception as e:
     print(f"Error: ${e}")
 
-kindergarten = database.get_collection("kindergarten")
-school = database.get_collection("school")
-social_child_project = database.get_collection("social_child_projects")
-social_teenage_project = database.get_collection("social_teenage_project")
-user_collection = database.get_collection("users")
+kindergarten = database["kindergarten"]
+school = database["school"]
+social_child_project = database["social_child_projects"]
+social_teenage_project = database["social_teenage_project"]
+user_collection = database["users"]
 
 
 async def retrieve_kg_facilities():
@@ -122,21 +122,99 @@ async def authenticate_user(username: str, password: str) -> dict:
     return user
 
 
-async def set_favorite_facility(username: str, facility_id: str) -> dict:
-    result = await user_collection.update_one(
+async def set_user_favorite(username: str, facility_id: str):
+    collections = [
+        kindergarten,
+        school,
+        social_child_project,
+        social_teenage_project
+    ]
+    facility = None
+    for collection in collections:
+        facility = await collection.find_one({"_id": ObjectId(facility_id)})
+        if facility:
+            break
+    if not facility:
+        raise HTTPException(status_code=404, detail="Facility not found")
+
+    facility = convert_objectid_to_str(facility)
+
+    # Infer the facility type based on the presence of specific fields
+    if 'KITA' in facility or 'HORT' in facility:
+        facility = KinderGartenFacilityModel(**facility)
+
+    elif 'TYP' in facility or 'ART' in facility:
+        if 'global_uuid' in facility:
+            facility['global_uuid'] = Binary.from_uuid(uuid.UUID(facility['global_uuid']))
+        facility = SchoolFacilityModel(**facility)
+
+    elif 'LEISTUNGEN' in facility:
+        facility = SPFacilityModel(**facility)
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid facility type")
+
+    result = await users_collection.update_one(
         {"username": username},
-        {"$set": {"favorite_facility": ObjectId(facility_id)}}
+        {"$set": {"favorite_facility": facility.dict()}}
     )
+
     if result.modified_count == 1:
         return await get_user(username)
+
     return None
 
 
 async def get_favorite_facility(username: str) -> dict:
     user = await get_user(username)
+
     if user and "favorite_facility" in user:
-        facility = await database.facilities.find_one({"_id": user["favorite_facility"]})
-        if facility:
-            facility["id"] = str(facility["_id"])
-            return facility
+        favorite_facility = user["favorite_facility"]
+        # favorite_facility["id"] = str(favorite_facility["_id"])
+        return favorite_facility
+
     return None
+
+
+def convert_objectid_to_str(document):
+    if '_id' in document:
+        document['_id'] = str(document['_id'])
+    return document
+
+
+async def fetch_facility(facility_id: str):
+    collections = [
+        kindergarten,
+        school,
+        social_child_project,
+        social_teenage_project
+    ]
+    facility = None
+    for collection in collections:
+        facility = await collection.find_one({"_id": ObjectId(facility_id)})
+        if facility:
+            break
+
+    facility = convert_objectid_to_str(facility)
+
+    # Infer the facility type based on the presence of specific fields
+    if 'KITA' in facility or 'HORT' in facility:
+        return KinderGartenFacilityModel(**facility)
+    elif 'TYP' in facility or 'ART' in facility:
+        return SchoolFacilityModel(**facility)
+    elif 'LEISTUNGEN' in facility:
+        return SPFacilityModel(**facility)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid facility type")
+
+
+async def delete_user_favorite(username: str) -> dict:
+    result = await users_collection.update_one(
+        {"username": username},
+        {"$unset": {"favorite_facility": None}}
+    )
+
+    if result.modified_count == 1:
+        return await get_user(username)
+
+    raise HTTPException(status_code=404, detail="User not found or favorite facility already removed")

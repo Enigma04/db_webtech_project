@@ -1,18 +1,12 @@
-# main.py
 from datetime import timedelta
-from typing import Optional
-
 from fastapi import FastAPI, Body, HTTPException, Depends
-from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from starlette import status
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-from models import UserSignup, UserModel, Facility, FavoriteFacility, UserUpdate
+from models import UserSignup, UserModel, UserUpdate, FacilityType
 from database import (
     retrieve_kg_facility,
     retrieve_kg_facilities,
@@ -22,7 +16,8 @@ from database import (
     retrieve_scp_facilities,
     retrieve_stp_facility,
     retrieve_stp_facilities,
-    retrieve_all, get_user, add_user, authenticate_user, set_favorite_facility, get_favorite_facility, users_collection,
+    retrieve_all, get_user, add_user, authenticate_user, set_user_favorite, get_favorite_facility, users_collection,
+    fetch_facility, delete_user_favorite,
 )
 
 app = FastAPI()
@@ -196,18 +191,33 @@ async def delete_user_account(current_user: UserModel = Depends(get_current_user
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@app.post("/users/me/favorite", response_model=Facility)
-async def set_user_favorite_facility(favorite: FavoriteFacility, current_user: UserModel = Depends(get_current_user)):
-    updated_user = await set_favorite_facility(current_user.username, favorite.facility_id)
+@app.post("/users/me/favorite", response_model=UserUpdate)
+async def set_user_favorite_facility(facility_id: str, current_user: UserModel = Depends(get_current_user)):
+    updated_user = await set_user_favorite(current_user["username"], facility_id)
     if updated_user is None:
         raise HTTPException(status_code=400, detail="Facility not found")
-    favorite_facility = await get_favorite_facility(current_user.username)
+    favorite_facility = await get_favorite_facility(current_user["username"])
     return favorite_facility
 
 
-@app.get("/users/me/favorite", response_model=Optional[Facility])
-async def get_user_favorite_facility(current_user: UserModel = Depends(get_current_user)):
-    favorite_facility = await get_favorite_facility(current_user.username)
-    if favorite_facility is None:
-        raise HTTPException(status_code=404, detail="Favorite facility not found")
-    return favorite_facility
+@app.patch("/users/me/favourite", response_model=UserUpdate)
+async def update_favourite_facility(
+        facility_id: str,
+        current_user: UserModel = Depends(get_current_user)
+):
+    return await set_user_favorite(current_user["username"], facility_id)
+
+
+@app.get("/users/me/favourite")
+async def get_favourite_facility(current_user: UserModel = Depends(get_current_user)):
+    return await get_favorite_facility(current_user["username"])
+
+
+@app.delete("/users/me/favorite", response_model=UserUpdate)
+async def delete_user_favourite(current_user: UserModel = Depends(get_current_user)):
+    return await delete_user_favorite(current_user["username"])
+
+
+@app.get("/facilities/{facility_id}", response_model=FacilityType)
+async def get_facility(facility_id: str):
+    return await fetch_facility(facility_id)
