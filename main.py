@@ -28,7 +28,9 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "https://localhost:5173",
-    "https://school-picker-cfao.vercel.app"
+    "https://school-picker-cfao.vercel.app",
+    "https://192.168.1.4:5173"
+
 ]
 
 app.add_middleware(
