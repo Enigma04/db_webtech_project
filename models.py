@@ -149,6 +149,9 @@ class UserModel(BaseModel):
     username: str
     email: EmailStr
     full_name: Optional[str] = None
+    address: str
+    house_number: Optional[str] = None
+    plz: str
 
 
 class UserFavoriteFacilityModel(BaseModel):
@@ -163,7 +166,6 @@ class UserUpdate(BaseModel):
     address: str
     house_number: Optional[str] = None
     plz: str
-    ort: str
 
 
 class UserLogin(BaseModel):
@@ -179,7 +181,6 @@ class UserSignup(BaseModel):
     address: str
     house_number: Optional[str] = None
     plz: str
-    ort: str
 
 
 class UserInDB(UserModel):
