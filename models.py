@@ -164,7 +164,7 @@ class UserFavoriteFacilityModel(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, example="John Doe")
     password: Optional[str] = Field(None, example="strong_password")
-    favourite_facility: Optional[favourite_facility_dt] = Field(None, example="id: ...., X: ...., Y: .....")
+    favourite_facility: Optional[str] = Field(None, example="id: ...., X: ...., Y: .....")
     address: str = Field(..., example="Luscious Avenue 114")
     house_number: Optional[str] = Field(None, example="123")
     plz: str = Field(..., example="09123")
