@@ -212,7 +212,7 @@ async def update_favourite_facility(
     return await set_user_favorite(current_user["username"], facility_id)
 
 
-@app.get("/users/me/favourite", response_model=FacilityType, response_description="gets the favourite facility")
+@app.get("/users/me/favourite", response_description="gets the favourite facility")
 async def get_favourite_facility(current_user: UserModel = Depends(get_current_user)):
     return await get_favorite_facility(current_user["username"])
 

@@ -151,9 +151,9 @@ class UserModel(BaseModel):
     username: str = Field(..., example="johndoe@mail.com")
     email: EmailStr = Field(..., example="johndoe@mail.com")
     full_name: Optional[str] = Field(None, example="John Doe")
-    address: str = Field(..., example="Luscious Avenue 114")
+    address: Optional[str] = Field(None, example="Luscious Avenue 114")
     house_number: Optional[str] = Field(None, example="123")
-    plz: str = Field(..., example="09123")
+    plz: Optional[str] = Field(None, example="1234")
 
 
 class UserFavoriteFacilityModel(BaseModel):
@@ -164,10 +164,10 @@ class UserFavoriteFacilityModel(BaseModel):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, example="John Doe")
     password: Optional[str] = Field(None, example="strong_password")
-    favourite_facility: Optional[str] = Field(None, example="id: ...., X: ...., Y: .....")
-    address: str = Field(..., example="Luscious Avenue 114")
+    favorite_facility: Optional[dict] = None
+    address: Optional[str] = Field(None, example="Luscious Avenue 114")
     house_number: Optional[str] = Field(None, example="123")
-    plz: str = Field(..., example="09123")
+    plz: Optional[str] = Field(None, example="1234")
 
 
 class UserLogin(BaseModel):
