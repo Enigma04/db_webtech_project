@@ -42,21 +42,21 @@ app.add_middleware(
 )
 
 
-@app.get("/kg-facilities/{id}", response_description="List a kindergarten", response_model=FacilityType)
+@app.get("/kg-facilities/{id}", response_description="List a Daycare")
 async def get_kindergarten(id: str):
     kindergarten = await retrieve_kg_facility(id)
     if kindergarten:
         return kindergarten
-    raise HTTPException(status_code=404, detail=f"Kindergarten with ID {id} not found")
+    raise HTTPException(status_code=404, detail=f"Daycare with ID {id} not found")
 
 
-@app.get("/kg-facilities/", response_description="List all kindergartens", response_model=list)
+@app.get("/kg-facilities/", response_description="List all daycares")
 async def get_all_kindergartens():
     kindergartens = await retrieve_kg_facilities()
     return kindergartens
 
 
-@app.get("/school-facilities/{id}", response_description="List a school", response_model= FacilityType)
+@app.get("/school-facilities/{id}", response_description="List a school")
 async def get_school(id: str):
     school = await retrieve_school_facility(id)
     if school:
@@ -64,13 +64,13 @@ async def get_school(id: str):
     raise HTTPException(status_code=404, detail=f"School with ID {id} not found")
 
 
-@app.get("/school-facilities/", response_description="List all schools", response_model= list)
+@app.get("/school-facilities/", response_description="List all schools")
 async def get_all_schools():
     schools = await retrieve_school_facilities()
     return schools
 
 
-@app.get("/social-child-project-facilities/{id}", response_description="List a social child project", response_model= FacilityType)
+@app.get("/social-child-project-facilities/{id}", response_description="List a school social work")
 async def get_scp(id: str):
     scp = await retrieve_scp_facility(id)
     if scp:
@@ -78,13 +78,13 @@ async def get_scp(id: str):
     raise HTTPException(status_code=404, detail=f"Social Child Project with ID {id} not found")
 
 
-@app.get("/social-child-project-facilities/", response_description="List all social child projects", response_model= list)
+@app.get("/social-child-project-facilities/", response_description="List all school social works")
 async def get_all_scp():
     scps = await retrieve_scp_facilities()
     return scps
 
 
-@app.get("/social-teenage-project-facilities/{id}", response_description="List a social teenage project", response_model= FacilityType)
+@app.get("/social-teenage-project-facilities/{id}", response_description="List a youth vocational assistance")
 async def get_stp(id: str):
     stp = await retrieve_stp_facility(id)
     if stp:
@@ -92,7 +92,7 @@ async def get_stp(id: str):
     raise HTTPException(status_code=404, detail=f"Social Teenage Project with ID {id} not found")
 
 
-@app.get("/social-teenage-project-facilities/", response_description="List all social teenage projects", response_model= list)
+@app.get("/social-teenage-project-facilities/", response_description="List all syouth vocational assistants")
 async def get_all_stp():
     stps = await retrieve_stp_facilities()
     return stps
@@ -125,7 +125,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-@app.post("/signup/", response_description="Register a new user", response_model= TokenResponse)
+@app.post("/signup/", response_description="Register a new user", response_model=TokenResponse)
 async def signup(user: UserSignup = Body(...)):
     user_data = user.dict()
     existing_user = await users_collection.find_one(
