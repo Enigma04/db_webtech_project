@@ -1,3 +1,4 @@
+from fastapi import Body
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, Union
 
@@ -143,15 +144,16 @@ class SPFacilityModel(BaseModel):
 
 
 FacilityType = Union[SchoolFacilityModel, KinderGartenFacilityModel, SPFacilityModel]
+favourite_facility_dt = Union[dict, str, int, bool, float, list]
 
 
 class UserModel(BaseModel):
-    username: str
-    email: EmailStr
-    full_name: Optional[str] = None
-    address: str
-    house_number: Optional[str] = None
-    plz: str
+    username: str = Field(..., example="johndoe@mail.com")
+    email: EmailStr = Field(..., example="johndoe@mail.com")
+    full_name: Optional[str] = Field(None, example="John Doe")
+    address: str = Field(..., example="Luscious Avenue 114")
+    house_number: Optional[str] = Field(None, example="123")
+    plz: str = Field(..., example="09123")
 
 
 class UserFavoriteFacilityModel(BaseModel):
@@ -160,12 +162,12 @@ class UserFavoriteFacilityModel(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    password: Optional[str] = None
-    favourite_facility: Optional[str] = None
-    address: str
-    house_number: Optional[str] = None
-    plz: str
+    full_name: Optional[str] = Field(None, example="John Doe")
+    password: Optional[str] = Field(None, example="strong_password")
+    favourite_facility: Optional[favourite_facility_dt] = Field(None, example="id: ...., X: ...., Y: .....")
+    address: str = Field(..., example="Luscious Avenue 114")
+    house_number: Optional[str] = Field(None, example="123")
+    plz: str = Field(..., example="09123")
 
 
 class UserLogin(BaseModel):
@@ -190,3 +192,15 @@ class UserInDB(UserModel):
 class FavoriteFacility(BaseModel):
     facility_id: str
 
+
+class TokenResponse(BaseModel):
+    message: str = Field(..., example="User registered and logged in successfully"),
+    access_token: str = Field(...,
+                              example="access_token"),
+    token_type: str = Field(..., example="bearer"),
+
+
+class LoginResponse(BaseModel):
+    access_token: str = Field(...,
+                              example="access_token"),
+    token_type: str = Field(..., example="bearer"),

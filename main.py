@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from utils import get_password_hash, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-from models import UserSignup, UserModel, UserUpdate, FacilityType
+from models import UserSignup, UserModel, UserUpdate, FacilityType, TokenResponse, LoginResponse
 from database import (
     retrieve_kg_facility,
     retrieve_kg_facilities,
@@ -42,7 +42,7 @@ app.add_middleware(
 )
 
 
-@app.get("/kg-facilities/{id}", response_description="List a kindergarten")
+@app.get("/kg-facilities/{id}", response_description="List a kindergarten", response_model=FacilityType)
 async def get_kindergarten(id: str):
     kindergarten = await retrieve_kg_facility(id)
     if kindergarten:
@@ -50,13 +50,13 @@ async def get_kindergarten(id: str):
     raise HTTPException(status_code=404, detail=f"Kindergarten with ID {id} not found")
 
 
-@app.get("/kg-facilities/", response_description="List all kindergartens")
+@app.get("/kg-facilities/", response_description="List all kindergartens", response_model=list)
 async def get_all_kindergartens():
     kindergartens = await retrieve_kg_facilities()
     return kindergartens
 
 
-@app.get("/school-facilities/{id}", response_description="List a school")
+@app.get("/school-facilities/{id}", response_description="List a school", response_model= FacilityType)
 async def get_school(id: str):
     school = await retrieve_school_facility(id)
     if school:
@@ -64,13 +64,13 @@ async def get_school(id: str):
     raise HTTPException(status_code=404, detail=f"School with ID {id} not found")
 
 
-@app.get("/school-facilities/", response_description="List all schools")
+@app.get("/school-facilities/", response_description="List all schools", response_model= list)
 async def get_all_schools():
     schools = await retrieve_school_facilities()
     return schools
 
 
-@app.get("/social-child-project-facilities/{id}", response_description="List a social child project")
+@app.get("/social-child-project-facilities/{id}", response_description="List a social child project", response_model= FacilityType)
 async def get_scp(id: str):
     scp = await retrieve_scp_facility(id)
     if scp:
@@ -78,13 +78,13 @@ async def get_scp(id: str):
     raise HTTPException(status_code=404, detail=f"Social Child Project with ID {id} not found")
 
 
-@app.get("/social-child-project-facilities/", response_description="List all social child projects")
+@app.get("/social-child-project-facilities/", response_description="List all social child projects", response_model= list)
 async def get_all_scp():
     scps = await retrieve_scp_facilities()
     return scps
 
 
-@app.get("/social-teenage-project-facilities/{id}", response_description="List a social teenage project")
+@app.get("/social-teenage-project-facilities/{id}", response_description="List a social teenage project", response_model= FacilityType)
 async def get_stp(id: str):
     stp = await retrieve_stp_facility(id)
     if stp:
@@ -92,7 +92,7 @@ async def get_stp(id: str):
     raise HTTPException(status_code=404, detail=f"Social Teenage Project with ID {id} not found")
 
 
-@app.get("/social-teenage-project-facilities/", response_description="List all social teenage projects")
+@app.get("/social-teenage-project-facilities/", response_description="List all social teenage projects", response_model= list)
 async def get_all_stp():
     stps = await retrieve_stp_facilities()
     return stps
@@ -125,7 +125,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-@app.post("/signup/", response_description="Register a new user")
+@app.post("/signup/", response_description="Register a new user", response_model= TokenResponse)
 async def signup(user: UserSignup = Body(...)):
     user_data = user.dict()
     existing_user = await users_collection.find_one(
@@ -149,7 +149,7 @@ async def signup(user: UserSignup = Body(...)):
             "token_type": "bearer"}
 
 
-@app.post("/token", response_model=dict)
+@app.post("/token", response_model=LoginResponse, response_description="Login to the application")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -165,12 +165,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/users/me", response_model=UserModel)
+@app.get("/users/me", response_model=UserModel, response_description="Shows the current user")
 async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
 
 
-@app.put("/users/me", response_model=UserModel)
+@app.put("/users/me", response_model=UserModel, response_description="Updates the user information")
 async def update_user_details(
         user_update: UserUpdate,
         current_user: UserModel = Depends(get_current_user)
@@ -194,7 +194,8 @@ async def delete_user_account(current_user: UserModel = Depends(get_current_user
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@app.post("/users/me/favorite", response_model=UserUpdate)
+@app.post("/users/me/favorite", response_model=UserUpdate,
+          response_description="sets the favourite facility of the user")
 async def set_user_favorite_facility(facility_id: str, current_user: UserModel = Depends(get_current_user)):
     updated_user = await set_user_favorite(current_user["username"], facility_id)
     if updated_user is None:
@@ -203,7 +204,7 @@ async def set_user_favorite_facility(facility_id: str, current_user: UserModel =
     return favorite_facility
 
 
-@app.patch("/users/me/favourite", response_model=UserUpdate)
+@app.patch("/users/me/favourite", response_model=UserUpdate, response_description="changes the favourite facility")
 async def update_favourite_facility(
         facility_id: str,
         current_user: UserModel = Depends(get_current_user)
@@ -211,12 +212,12 @@ async def update_favourite_facility(
     return await set_user_favorite(current_user["username"], facility_id)
 
 
-@app.get("/users/me/favourite")
+@app.get("/users/me/favourite", response_model=FacilityType, response_description="gets the favourite facility")
 async def get_favourite_facility(current_user: UserModel = Depends(get_current_user)):
     return await get_favorite_facility(current_user["username"])
 
 
-@app.delete("/users/me/favorite", response_model=UserUpdate)
+@app.delete("/users/me/favorite", response_model=UserUpdate, response_description="deletes the favourite")
 async def delete_user_favourite(current_user: UserModel = Depends(get_current_user)):
     return await delete_user_favorite(current_user["username"])
 
